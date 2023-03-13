@@ -1,0 +1,7 @@
+apt install gcc
+conda install gcc_linux-64 gxx_linux-64
+create conda KGTOSA
+create activate KGTOSA
+conda install pytorch torchvision torchaudio cpuonly -c pytorch
+conda install pyg -c pyg
+pip install pandas
