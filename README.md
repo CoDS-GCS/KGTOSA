@@ -1,9 +1,7 @@
-# KG-TOSA: A META-SAMPLER FOR GNN
+# KG-TOSA: A Task-Oriented graph SAmpler for GNN
 <figure>
-  <img src="KGTOSA-Architecture.png"  />
-  <figcaption>Fig.1: The KG-TOSA architecture is designed to work on
-top of existing RDF engines and GNN methods. KG-TOSA offloads the extraction of a 𝐾𝐺 ′ to an RDF engine and
-automates the training of GNN tasks using a given method.</figcaption>
+  <img src="KGTOSA_BGP.png" width="400" />
+  <figcaption>Fig.1: The TOSG’s generic graph pattern is based on two parameters: (i) the direction (outgoing and incoming) predicates, and (i) the number of hops.</figcaption>
 </figure>
 
 ## Installation
