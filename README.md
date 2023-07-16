@@ -23,6 +23,9 @@ python graph_saint_KGTOSA.py --Dataset <DatasetPath>
 python graph_saint_Shadow_KGTOSA.py --Dataset <DatasetPath>
 # run SeHGNN  
 python SeHGNN/ogbn/main.py --Dataset <DatasetPath>
+# run IBS
+python  IBS/run_ogbn_ppr.py --with config/<Config_path>  
+
 ```
 
 2. Link Prediction <br>
@@ -35,12 +38,8 @@ python Morse/main.py --dataset <DatasetName>
 ```
 
 
-<p> KGTOSA SPARQL Variations</p>
-<ul> 
-<li>d1h1</li>
-<li>d1h2</li>
-<li>d2h1</li>
-<li>d2h2</li>
-<li>FG (full graph)</li>
-<li>HG (Handcrafted graph)</li>
-</ul>
+<p> KGTOSA datasets download Linls </p>
+<p><a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_FG.zip">MAG_42M_FG</a>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_d1h1.zip">MAG_42M_d1h1</a>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/DBLP/DBLP15M_PV_FG.zip">DBLP-15M_d1h1</a>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/DBLP/DBLP15M_PV_d1h1.zip">DBLP-15M__d1h1</a></p>
