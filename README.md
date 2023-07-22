@@ -12,8 +12,20 @@
 conda activate KGTOSA
 ```
 
-<b>Reproduce Results:</b>
-1. Node Claassifcation
+
+
+<b>Extract TOSG triples:</b>
+1. Node Classification
+```python
+python -u TOSG_Extraction_NC.py --sparql_endpoint http://206.12.98.118:8890/sparql --graph_uri http://dblp.org --target_rel_uri https://dblp.org/rdf/schema#publishedIn --TOSG d1h1 --batch_size 1000000 --out_file dblp_pv --threads_count 32  
+```
+2. Link Prediction
+```python
+python -u TOSG_Extraction_LP.py --sparql_endpoint http://206.12.98.118:8890/sparql --graph_uri http://dblp.org --target_rel_uri https://dblp.org/rdf/schema#AffaliatedWith --TOSG d2h1 --batch_size 1000000 --out_file dblp_AA --threads_count 32  
+```
+
+<b>Reproduce KGTOSA Results:</b>
+1. Node Classification
 ```python
 # run RGCN  
 python rgcn-KGTOSA.py --Dataset <DatasetPath>
@@ -32,11 +44,12 @@ python  IBS/run_ogbn_ppr.py --with config/<Config_path>
 extract the dataset folder under the data folder under each method path
 ```python
 # run RGCN  
-python RGCN/main.py --Dataset <DatasetName>
-# run GraphSaint  
-python Morse/main.py --dataset <DatasetName>
+python RGCN/main.py --Dataset <DatasetName> --TargetRel <target_rel>
+# run MorsE  
+python Morse/main.py --dataset <DatasetName> --TargetRel <target_rel
+# run LHGNN  
+python LHGNN/main.py --dataset <DatasetName> --TargetRel <target_rel
 ```
-
 
 <p> KGTOSA datasets download Linls </p>
 <p><a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_FG.zip">MAG_42M_FG</a>

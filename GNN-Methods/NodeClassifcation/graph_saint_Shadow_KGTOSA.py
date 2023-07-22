@@ -11,7 +11,7 @@ from torch_sparse import SparseTensor
 from torch_geometric.utils import to_undirected
 from torch_geometric.data import Data
 from torch_geometric.loader import  GraphSAINTRandomWalkSampler , ShaDowKHopSampler
-GraphSAINTTaskBaisedRandomWalkSampler
+#GraphSAINTTaskBaisedRandomWalkSample
 from torch_geometric.utils.hetero import group_hetero_graph
 from torch_geometric.nn import MessagePassing
 import sys
