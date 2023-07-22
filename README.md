@@ -17,14 +17,24 @@ conda activate KGTOSA
 <b>Extract TOSG triples:</b>
 1. Node Classification
 ```python
-python -u TOSG_Extraction/TOSG_Extraction_NC.py --sparql_endpoint http://206.12.98.118:8890/sparql --graph_uri http://dblp.org --target_rel_uri https://dblp.org/rdf/schema#publishedIn --TOSG d1h1 --batch_size 1000000 --out_file dblp_pv --threads_count 32  
+python -u TOSG_Extraction/TOSG_Extraction_NC.py --sparql_endpoint http://206.12.98.118:8890/sparql --graph_uri http://dblp.org --target_rel_uri https://dblp.org/rdf/schema#publishedIn --TOSG d1h1 --batch_size 1000000 --out_file DBLP-15M_PV --threads_count 32  
 ```
 2. Link Prediction
 ```python
 python -u TOSG_Extraction/TOSG_Extraction_LP.py --target_rel_uri=isConnectedTo --data_path=<path> --dataset=YAGO3-10 --TOSG=d1h1 --file_sep=tab
 ```
-<b>Transform NC TOSG triples into PYG dataset</b>
-python -u DatasetTransformer/TSV_TO_PYG_dataset.py --traget_node_type=Paper --target_rel=publishedIn --csv_path=<path> --dataset_name=DBLP_PV_d1h1 --file_sep=tab --split_rel=publish_year 
+<b>Transform NC TOSG dataset into PYG dataset</b>
+```python
+python -u DatasetTransformer/TSV_TO_PYG_dataset.py --traget_node_type=Paper --target_rel=publishedIn --csv_path=<path> --dataset_name=DBLP-15M_PV_d1h1 --file_sep=tab --split_rel=publish_year 
+```
+<b>Download KGTOSA datasets</b>
+<p>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_FG.zip">MAG_42M_PV_FG</a>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_d1h1.zip">MAG_42M_PV_d1h1</a>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/DBLP/DBLP15M_PV_FG.zip">DBLP-15M_PV_FG</a>
+<a href="http://206.12.94.177/CodsData/KGNET/KGBen/DBLP/DBLP15M_PV_d1h1.zip">DBLP-15M_PV_d1h1</a>
+</p>
+
 
 <b>Reproduce KGTOSA Results:</b>
 1. Node Classification
@@ -52,9 +62,3 @@ python Morse/main.py --dataset <DatasetName> --TargetRel <target_rel
 python LHGNN/main.py --dataset <DatasetName> --TargetRel <target_rel
 ```
 
-<b>KGTOSA datasets download Links:</b>
-
-<p><a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_FG.zip">MAG_42M_FG</a>
-<a href="http://206.12.94.177/CodsData/KGNET/KGBen/MAG/MAG42M_PV_d1h1.zip">MAG_42M_d1h1</a>
-<a href="http://206.12.94.177/CodsData/KGNET/KGBen/DBLP/DBLP15M_PV_FG.zip">DBLP-15M_d1h1</a>
-<a href="http://206.12.94.177/CodsData/KGNET/KGBen/DBLP/DBLP15M_PV_d1h1.zip">DBLP-15M__d1h1</a></p>
