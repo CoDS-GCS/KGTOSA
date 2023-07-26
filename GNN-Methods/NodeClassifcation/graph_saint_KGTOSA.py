@@ -10,7 +10,8 @@ from torch.nn import ModuleList, Linear, ParameterDict, Parameter
 from torch_sparse import SparseTensor
 from torch_geometric.utils import to_undirected
 from torch_geometric.data import Data
-from torch_geometric.loader import  GraphSAINTRandomWalkSampler, GraphSAINTTaskBaisedRandomWalkSampler,GraphSAINTTaskWeightedRandomWalkSampler
+from torch_geometric.loader import  GraphSAINTRandomWalkSampler
+from KGTOSA_Samplers import GraphSAINTTaskBaisedRandomWalkSampler,GraphSAINTTaskWeightedRandomWalkSampler
 from torch_geometric.utils.hetero import group_hetero_graph
 from torch_geometric.nn import MessagePassing
 import sys
@@ -24,8 +25,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 import traceback
 import sys
-sys.path.insert(0, '/shared_mnt/github_repos/ogb/')
-from ogb.nodeproppred import PygNodePropPredDataset, Evaluator, PygNodePropPredDataset_hsh
+#sys.path.insert(0, '/shared_mnt/github_repos/ogb/')
+from ogb.nodeproppred import PygNodePropPredDataset
+from evaluater import Evaluator
+from custome_pyg_dataset import PygNodePropPredDataset_hsh
 from resource import *
 from logger import Logger
 import faulthandler
@@ -267,55 +270,30 @@ def graphSaint():
     parser.add_argument('--walk_length', type=int, default=2)
     parser.add_argument('--num_steps', type=int, default=30)
     parser.add_argument('--loadTrainedModel', type=int, default=0)
-    parser.add_argument('--graphsaint_dic_path', type=str, default='none')
     init_ru_maxrss = getrusage(RUSAGE_SELF).ru_maxrss
     args = parser.parse_args()
-    # graphsaint_dic_path='args.graphsaint_dic_path'
-    GSAINT_Dic={}
-    # with open(graphsaint_dic_path, 'rb') as handle:
-    #     GSAINT_Dic = pickle.load(handle)
-
-    # to_remove_pedicates=GSAINT_Dic['to_remove_pedicates']
-    # to_remove_subject_object=GSAINT_Dic['to_remove_subject_object']
-    # to_keep_edge_idx_map=GSAINT_Dic['to_keep_edge_idx_map']
-    # GA_Index=GSAINT_Dic['GA_Index']
     to_remove_pedicates = []
     to_remove_subject_object =[]
     to_keep_edge_idx_map = []
     GA_Index = 0
-    # GA_dataset_name="KGTOSA_MAG_StarQuery_10M"
-    # GA_dataset_name="KGTOSA_MAG_StarQuery"
-    GA_dataset_name="KGTOSA_MAG_Paper_Discipline_StarQuery"
-    MAG_datasets=[
-        #################################################################
-        # "DBLP_Paper_Venue_ReleventsubGraph_allPapers_RemoveAllLiterals_SY1900_EY2021_50Class",
-        # "DBLP_Paper_Venue_StarQuery_allPapers_RemoveAllLiterals_SY1900_EY2021_50Class",
-        # "DBLP_Paper_Venue_BStarQuery_allPapers_RemoveAllLiterals_SY1900_EY2021_50Class",
-        # "DBLP_Paper_Venue_PathQuery_allPapers_RemoveAllLiterals_SY1900_EY2021_50Class",
-        # "DBLP_Paper_Venue_BPathQuery_allPapers_RemoveAllLiterals_SY1900_EY2021_50Class",
-        "DBLP_Paper_Venue_FM_Literals2Nodes_SY1900_EY2021_50Class",
-        ##############################
-        # "DBLP_Affaliation_Country_ReleventSubGraph_Author_Affaliation_RemoveAllLiterals",
-        # "DBLP_Affaliation_Country_StarQuery_Author_Affaliation_RemoveAllLiterals",
-        # "DBLP_Affaliation_Country_BStarQuery_Author_Affaliation_RemoveAllLiterals",
-        # "DBLP_Affaliation_Country_PathQuery_Author_Affaliation_RemoveAllLiterals",
-        # "DBLP_Affaliation_Country_BPathQuery_Author_Affaliation_RemoveAllLiterals",
-        # "DBLP_Affliation_Country_FM_Author_Affaliation_RemoveAllLiterals",   
-    ]     
+    MAG_datasets=["DBLP_Paper_Venue_FM_Literals2Nodes_SY1900_EY2021_50Class"]
+    root_path="/shared_mnt/DBLP/KGTOSA_DBLP_Datasets/"
+    include_reverse_edge=True
+    n_classes=50
     print(args)
     gsaint_Final_Test=0
     for GA_dataset_name in MAG_datasets:  
         try:
             gsaint_start_t = datetime.datetime.now()
             ###################################Delete Folder if exist #############################
-            dir_path="/shared_mnt/DBLP/KGTOSA_DBLP_Datasets/"+GA_dataset_name
+            dir_path=root_path+GA_dataset_name
             try:
                 shutil.rmtree(dir_path)
                 print("Folder Deleted")
             except OSError as e:
                 print("Error Deleting : %s : %s" % (dir_path, e.strerror))
     #         ####################
-            dataset = PygNodePropPredDataset_hsh(name=GA_dataset_name, root='/shared_mnt/DBLP/KGTOSA_DBLP_Datasets/',numofClasses=str(50))
+            dataset = PygNodePropPredDataset_hsh(name=GA_dataset_name, root=root_path,numofClasses=str(n_classes))
             dataset_name=GA_dataset_name+"_GA_"+str(GA_Index)
             print("dataset_name=",dataset_name)
             dic_results[dataset_name] = {}
@@ -367,12 +345,10 @@ def graphSaint():
             to_remove_rels = []
             for keys, (row, col) in data.edge_index_dict.items():
                 if (keys[2] in to_remove_subject_object) or (keys[0] in to_remove_subject_object):
-                    # print("to remove keys=",keys)
                     to_remove_rels.append(keys)
 
             for keys, (row, col) in data.edge_index_dict.items():
                 if (keys[1] in to_remove_pedicates):
-                    # print("to remove keys=",keys)
                     to_remove_rels.append(keys)
                     to_remove_rels.append((keys[2], '_inv_' + keys[1], keys[0]))
 
@@ -386,11 +362,12 @@ def graphSaint():
 
             dic_results[dataset_name]["data"] = str(data)
             ##############add inverse edges ###################
-            edge_index_dict = data.edge_index_dict
-            key_lst = list(edge_index_dict.keys())
-            for key in key_lst:
-                r, c = edge_index_dict[(key[0], key[1], key[2])]
-                edge_index_dict[(key[2], 'inv_' + key[1], key[0])] = torch.stack([c, r])
+            if include_reverse_edge:
+                edge_index_dict = data.edge_index_dict
+                key_lst = list(edge_index_dict.keys())
+                for key in key_lst:
+                    r, c = edge_index_dict[(key[0], key[1], key[2])]
+                    edge_index_dict[(key[2], 'inv_' + key[1], key[0])] = torch.stack([c, r])
 
             # print("data after filter=",str(data))
             # print_memory_usage()
@@ -411,14 +388,14 @@ def graphSaint():
             start_t = datetime.datetime.now()
             print("dataset.processed_dir",dataset.processed_dir)
             # weights_dic={'rec':0.5,'pid':0.3,'Object_schema#publishedInJournal':0.1,'Object_schema#numberOfCreators':0.1} # non target based
-            weights_dic={'rec':0.5,'net':0.087,'Object_schema#numberOfCreators':0.086,'db':0.046,'Object_schema#yearOfEvent':0.046,'Object_schema#title':0.04} # target based
-            print("weights_dic=",weights_dic)
+            # weights_dic={'rec':0.5,'net':0.087,'Object_schema#numberOfCreators':0.086,'db':0.046,'Object_schema#yearOfEvent':0.046,'Object_schema#title':0.04} # target based
+            # print("weights_dic=",weights_dic)
             # weights_dic={'CreativeWork': 0.3, 'datePublished': 0.1, 'actor': 0.1,
             #  'countryOfOrigin': 0.1, 'producer': 0.1, 'duration': 0.1, 'contentLocation': 0.1,
             #  'inLanguage': 0.1}
-            NodesWeightDic={}
-            for key in weights_dic.keys():
-                NodesWeightDic[(min(local2global[key]).item(),max(local2global[key]).item())]=weights_dic[key]
+            # NodesWeightDic={}
+            # for key in weights_dic.keys():
+            #     NodesWeightDic[(min(local2global[key]).item(),max(local2global[key]).item())]=weights_dic[key]
             train_loader = GraphSAINTRandomWalkSampler(
             # train_loader = GraphSAINTTaskBaisedRandomWalkSampler(
             #train_loader=GraphSAINTTaskWeightedRandomWalkSampler(
@@ -430,19 +407,18 @@ def graphSaint():
                  num_steps=args.num_steps,
                  sample_coverage=0,
                  save_dir=dataset.processed_dir)
-
             end_t = datetime.datetime.now()
             print("Sampling time=", end_t - start_t, " sec.")
             dic_results[dataset_name]["GSaint_Sampling_time"] = (end_t - start_t).total_seconds()
             start_t = datetime.datetime.now()
             # Map informations to their canonical type.
             #######################intialize random features ###############################
-            feat = torch.Tensor(data.num_nodes_dict[subject_node], 128)
+            emb_size=128
+            feat = torch.Tensor(data.num_nodes_dict[subject_node], emb_size)
             torch.nn.init.xavier_uniform_(feat)
             feat_dic = {subject_node: feat}
             ################################################################
             x_dict = {}
-            # for key, x in data.x_dict.items():
             for key, x in feat_dic.items():
                 x_dict[key2int[key]] = x
 
@@ -462,20 +438,19 @@ def graphSaint():
             print("x_dict=", x_dict.keys())
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
             model_loaded_ru_maxrss = getrusage(RUSAGE_SELF).ru_maxrss
+            output_path = "/shared_mnt/KGTOSA_MAG/"
+            model_name = dataset_name + "_DBLP_conf_GSAINT_QM.model"
             if args.loadTrainedModel == 1:
-                model.load_state_dict(torch.load("ogbn-DBLP-FM-GSaint.model"))
-                model.eval()
-                out = model.inference(x_dict, edge_index_dict, key2int)
-                out = out[key2int[subject_node]]
-                y_pred = out.argmax(dim=-1, keepdim=True).cpu()
-                y_true = data.y_dict[subject_node]
-
-                out_lst = torch.flatten(y_true).tolist()
-                pred_lst = torch.flatten(y_pred).tolist()
-                out_df = pd.DataFrame({"y_pred": pred_lst, "y_true": out_lst})
-                # print(y_pred, data.y_dict[subject_node])
-                # print(out_df)
-                out_df.to_csv("GSaint_DBLP_conf_output.csv", index=None)
+                with torch.no_grad():
+                    start_t = datetime.datetime.now()
+                    model.load_state_dict(torch.load(output_path +model_name))
+                    model.eval()
+                    out = model.inference(x_dict, edge_index_dict, key2int)
+                    out = out[key2int[subject_node]]
+                    y_pred = out.argmax(dim=-1, keepdim=True).cpu()
+                    end_t = datetime.datetime.now()
+                    print(dataset_name, "Infernce Time=", (end_t - start_t).total_seconds())
+                    dic_results[dataset_name]["InfernceTime="] = (end_t - start_t).total_seconds()
             else:
                 print("start test")
                 test()  # Test if inference on GPU succeeds.
@@ -500,6 +475,8 @@ def graphSaint():
                               f'Train: {100 * train_acc:.2f}%, '
                               f'Valid: {100 * valid_acc:.2f}%, '
                               f'Test: {100 * test_acc:.2f}%')
+                        print("model # Total  parameters ", sum(p.numel() for p in model.parameters()))
+                        print("model # trainable paramters ", sum(p.numel() for p in model.parameters() if p.requires_grad))
                     logger.print_statistics(run)
                     end_t = datetime.datetime.now()
                     total_run_t = total_run_t + (end_t - start_t).total_seconds()
@@ -520,9 +497,12 @@ def graphSaint():
                 dic_results[dataset_name]["runs_count"] = args.runs
                 dic_results[dataset_name]["avg_train_time"] = total_run_t
                 dic_results[dataset_name]["rgcn_total_time"] = (gsaint_end_t - gsaint_start_t).total_seconds()
-                pd.DataFrame(dic_results).transpose().to_csv("/shared_mnt/KGTOSA_MAG/GSAINT_" + GA_dataset_name + "_Times.csv", index=False)
+                dic_results[dataset_name]["model_parameters_count"]= sum(p.numel() for p in model.parameters())
+                dic_results[dataset_name]["model_trainable_paramters_count"]=sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+                pd.DataFrame(dic_results).transpose().to_csv(output_path+"GSAINT_" + GA_dataset_name + "_Times.csv", index=False)
                 # shutil.rmtree("/shared_mnt/DBLP/" + dataset_name)
-                torch.save(model.state_dict(), "/shared_mnt/DBLP/" + dataset_name + "_DBLP_conf_GSAINT_QM.model")
+                torch.save(model.state_dict(), output_path +model_name )
         except Exception as e:
             print(e)
             print(traceback.format_exc())
