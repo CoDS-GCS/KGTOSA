@@ -1,0 +1,24 @@
+conda install pytorch torchvision torchaudio cpuonly -c pytorch
+conda install pyg -c pyg
+pip install pandas
+pip install pyvis
+pip install sacred
+pip install seml
+pip install psutil
+pip install numba
+pip install dgl==0.9.0
+pip install lmdb==0.98
+pip install networkx==2.4
+pip install scikit-learn
+pip install tqdm==4.43.0
+pip install SPARQLWrapper
+pip install wget
+pip install pyodbc
+pip install pyvis
+pip install --no-index torch-scatter -f https://pytorch-geometric.com/whl/torch-2.0.0+cpu.html
+pip install --no-index torch-sparse -f https://pytorch-geometric.com/whl/torch-2.0.0+cpu.html
+pip install --no-index torch-cluster -f https://pytorch-geometric.com/whl/torch-2.0.0+cpu.html
+pip install --no-index torch-spline-conv -f https://pytorch-geometric.com/whl/torch-2.0.0+cpu.html
+pip install torch-geometric
+pip install pystardog
+pip install requests_toolbelt
