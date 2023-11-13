@@ -1,6 +1,8 @@
 from copy import copy
 import argparse
 import shutil
+
+import numpy
 import pandas as pd
 from tqdm import tqdm
 import datetime
@@ -35,6 +37,7 @@ import faulthandler
 faulthandler.enable()
 import pickle
 subject_node='Paper'
+subject_node_code=-1
 def print_memory_usage():
     # print("max_mem_GB=",psutil.Process().memory_info().rss / (1024 * 1024*1024))
     # print("get_process_memory=",getrusage(RUSAGE_SELF).ru_maxrss/(1024*1024))
@@ -208,10 +211,14 @@ def graphSaint():
         # tqdm.monitor_interval = 0
         pbar = tqdm(total=args.num_steps * args.batch_size)
         pbar.set_description(f'Epoch {epoch:02d}')
-
         total_loss = total_examples = 0
-        for data in train_loader:
+        data_suff_lst=[]
+        for idx,data in enumerate(train_loader):
             data = data.to(device)
+            subject_nodes_count=int((data.node_type == subject_node_code).float().sum().item())
+            all_nodes_count = data.num_nodes
+            data_suff="batch_idx="+str(idx)+",subject_nodes_count="+str(subject_nodes_count)+",nodes_count="+str(all_nodes_count)+",subject nodes(%)="+str((subject_nodes_count/all_nodes_count)*100)
+            data_suff_lst.append(data_suff)
             optimizer.zero_grad()
             out = model(x_dict, data.edge_index, data.edge_attr, data.node_type,
                         data.local_node_idx)
@@ -228,6 +235,7 @@ def graphSaint():
 
         # pbar.refresh()  # force print final state
         pbar.close()
+        print(data_suff_lst)
         # pbar.reset()
         return total_loss / total_examples
 
@@ -263,9 +271,9 @@ def graphSaint():
     parser.add_argument('--hidden_channels', type=int, default=64)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--lr', type=float, default=0.005)
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=10)
     # parser.add_argument('--epochs', type=int, default=15)
-    parser.add_argument('--runs', type=int, default=3)
+    parser.add_argument('--runs', type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=20000)
     parser.add_argument('--walk_length', type=int, default=2)
     parser.add_argument('--num_steps', type=int, default=30)
@@ -276,10 +284,10 @@ def graphSaint():
     to_remove_subject_object =[]
     to_keep_edge_idx_map = []
     GA_Index = 0
-    MAG_datasets=["DBLP_Paper_Venue_FM_Literals2Nodes_SY1900_EY2021_50Class"]
-    root_path="/shared_mnt/DBLP/KGTOSA_DBLP_Datasets/"
+    MAG_datasets=["mag"]
+    root_path="/media/hussein/UbuntuData/OGBN_Datasets/KGTOSA_MAG/"
     include_reverse_edge=True
-    n_classes=50
+    n_classes=349
     print(args)
     gsaint_Final_Test=0
     for GA_dataset_name in MAG_datasets:  
@@ -373,6 +381,7 @@ def graphSaint():
             # print_memory_usage()
             out = group_hetero_graph(data.edge_index_dict, data.num_nodes_dict)
             edge_index, edge_type, node_type, local_node_idx, local2global, key2int = out
+            subject_node_code=key2int[subject_node]
             # print_memory_usage()
 
             homo_data = Data(edge_index=edge_index, edge_attr=edge_type,
@@ -385,124 +394,133 @@ def graphSaint():
             homo_data.train_mask = torch.zeros((node_type.size(0)), dtype=torch.bool)
             homo_data.train_mask[local2global[subject_node][split_idx['train'][subject_node]]] = True
             # print(homo_data)
+            print("dataset.processed_dir", dataset.processed_dir)
             start_t = datetime.datetime.now()
-            print("dataset.processed_dir",dataset.processed_dir)
-            # weights_dic={'rec':0.5,'pid':0.3,'Object_schema#publishedInJournal':0.1,'Object_schema#numberOfCreators':0.1} # non target based
-            # weights_dic={'rec':0.5,'net':0.087,'Object_schema#numberOfCreators':0.086,'db':0.046,'Object_schema#yearOfEvent':0.046,'Object_schema#title':0.04} # target based
-            # print("weights_dic=",weights_dic)
-            # weights_dic={'CreativeWork': 0.3, 'datePublished': 0.1, 'actor': 0.1,
-            #  'countryOfOrigin': 0.1, 'producer': 0.1, 'duration': 0.1, 'contentLocation': 0.1,
-            #  'inLanguage': 0.1}
-            # NodesWeightDic={}
-            # for key in weights_dic.keys():
-            #     NodesWeightDic[(min(local2global[key]).item(),max(local2global[key]).item())]=weights_dic[key]
-            train_loader = GraphSAINTRandomWalkSampler(
-            # train_loader = GraphSAINTTaskBaisedRandomWalkSampler(
-            #train_loader=GraphSAINTTaskWeightedRandomWalkSampler(
-                 homo_data,
-                 batch_size=args.batch_size,
-                 walk_length=args.num_layers,
-                 # Subject_indices=local2global[subject_node],
-                 # NodesWeightDic=NodesWeightDic,
-                 num_steps=args.num_steps,
-                 sample_coverage=0,
-                 save_dir=dataset.processed_dir)
-            end_t = datetime.datetime.now()
-            print("Sampling time=", end_t - start_t, " sec.")
-            dic_results[dataset_name]["GSaint_Sampling_time"] = (end_t - start_t).total_seconds()
-            start_t = datetime.datetime.now()
-            # Map informations to their canonical type.
-            #######################intialize random features ###############################
-            emb_size=128
-            feat = torch.Tensor(data.num_nodes_dict[subject_node], emb_size)
-            torch.nn.init.xavier_uniform_(feat)
-            feat_dic = {subject_node: feat}
-            ################################################################
-            x_dict = {}
-            for key, x in feat_dic.items():
-                x_dict[key2int[key]] = x
-
-            num_nodes_dict = {}
-            for key, N in data.num_nodes_dict.items():
-                num_nodes_dict[key2int[key]] = N
-
-            end_t = datetime.datetime.now()
-            print("model init time CPU=", end_t - start_t, " sec.")
-            dic_results[dataset_name]["model init Time"] = (end_t - start_t).total_seconds()
-            device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
-            model = RGCN(128, args.hidden_channels, dataset.num_classes, args.num_layers,
-                         args.dropout, num_nodes_dict, list(x_dict.keys()),
-                         len(edge_index_dict.keys())).to(device)
-
-            x_dict = {k: v.to(device) for k, v in x_dict.items()}
-            print("x_dict=", x_dict.keys())
-            optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-            model_loaded_ru_maxrss = getrusage(RUSAGE_SELF).ru_maxrss
-            output_path = "/shared_mnt/KGTOSA_MAG/"
-            model_name = dataset_name + "_DBLP_conf_GSAINT_QM.model"
-            if args.loadTrainedModel == 1:
-                with torch.no_grad():
-                    start_t = datetime.datetime.now()
-                    model.load_state_dict(torch.load(output_path +model_name))
-                    model.eval()
-                    out = model.inference(x_dict, edge_index_dict, key2int)
-                    out = out[key2int[subject_node]]
-                    y_pred = out.argmax(dim=-1, keepdim=True).cpu()
+            # for wl in numpy.arange(1,7):
+            #     print("WL=",wl)
+            # for target_node_ratio in [0, 0.2, 0.4, 0.6, 0.8, 1]:
+            for target_node_ratio in [0.8,1]:
+                print("target_node_ratio=",target_node_ratio)
+                for wl in [1,3]:
+                    print("wl=", wl)
+                    # weights_dic={'rec':0.5,'pid':0.3,'Object_schema#publishedInJournal':0.1,'Object_schema#numberOfCreators':0.1} # non target based
+                    # weights_dic={'rec':0.5,'net':0.087,'Object_schema#numberOfCreators':0.086,'db':0.046,'Object_schema#yearOfEvent':0.046,'Object_schema#title':0.04} # target based
+                    # print("weights_dic=",weights_dic)
+                    # weights_dic={'CreativeWork': 0.3, 'datePublished': 0.1, 'actor': 0.1,
+                    #  'countryOfOrigin': 0.1, 'producer': 0.1, 'duration': 0.1, 'contentLocation': 0.1,
+                    #  'inLanguage': 0.1}
+                    # NodesWeightDic={}
+                    # for key in weights_dic.keys():
+                    #     NodesWeightDic[(min(local2global[key]).item(),max(local2global[key]).item())]=weights_dic[key]
+                    # train_loader = GraphSAINTRandomWalkSampler(
+                    train_loader = GraphSAINTTaskBaisedRandomWalkSampler(
+                    #train_loader=GraphSAINTTaskWeightedRandomWalkSampler(
+                         data=homo_data,
+                         batch_size=args.batch_size,
+                         # walk_length=args.num_layers,
+                         walk_length=wl,
+                         Subject_indices=local2global[subject_node],
+                         # NodesWeightDic=NodesWeightDic,
+                         num_steps=args.num_steps,
+                         sample_coverage=0,
+                        target_node_ratio=target_node_ratio,
+                         save_dir=dataset.processed_dir)
                     end_t = datetime.datetime.now()
-                    print(dataset_name, "Infernce Time=", (end_t - start_t).total_seconds())
-                    dic_results[dataset_name]["InfernceTime="] = (end_t - start_t).total_seconds()
-            else:
-                print("start test")
-                test()  # Test if inference on GPU succeeds.
-                total_run_t = 0
-                for run in range(args.runs):
+                    print("Sampling time=", end_t - start_t, " sec.")
+                    dic_results[dataset_name]["GSaint_Sampling_time"] = (end_t - start_t).total_seconds()
                     start_t = datetime.datetime.now()
-                    model.reset_parameters()
-                    for epoch in range(1, 1 + args.epochs):
-                        loss = train(epoch)
-                        ##############
-                        if loss==-1:
-                            return 0.001                    
-                       ##############
+                    # Map informations to their canonical type.
+                    #######################intialize random features ###############################
+                    emb_size=128
+                    feat = torch.Tensor(data.num_nodes_dict[subject_node], emb_size)
+                    torch.nn.init.xavier_uniform_(feat)
+                    feat_dic = {subject_node: feat}
+                    ################################################################
+                    x_dict = {}
+                    for key, x in feat_dic.items():
+                        x_dict[key2int[key]] = x
 
-                        torch.cuda.empty_cache()
-                        result = test()
-                        logger.add_result(run, result)
-                        train_acc, valid_acc, test_acc = result
-                        print(f'Run: {run + 1:02d}, '
-                              f'Epoch: {epoch:02d}, '
-                              f'Loss: {loss:.4f}, '
-                              f'Train: {100 * train_acc:.2f}%, '
-                              f'Valid: {100 * valid_acc:.2f}%, '
-                              f'Test: {100 * test_acc:.2f}%')
-                        print("model # Total  parameters ", sum(p.numel() for p in model.parameters()))
-                        print("model # trainable paramters ", sum(p.numel() for p in model.parameters() if p.requires_grad))
-                    logger.print_statistics(run)
+                    num_nodes_dict = {}
+                    for key, N in data.num_nodes_dict.items():
+                        num_nodes_dict[key2int[key]] = N
+
                     end_t = datetime.datetime.now()
-                    total_run_t = total_run_t + (end_t - start_t).total_seconds()
-                    print("model run ", run, " train time CPU=", end_t - start_t, " sec.")
-                    print(getrusage(RUSAGE_SELF))
-                total_run_t = (total_run_t + 0.00001) / args.runs
-                gsaint_end_t = datetime.datetime.now()
-                Highest_Train, Highest_Valid, Final_Train, Final_Test = logger.print_statistics()
-                model_trained_ru_maxrss = getrusage(RUSAGE_SELF).ru_maxrss
-                dic_results[dataset_name]["init_ru_maxrss"] = init_ru_maxrss
-                dic_results[dataset_name]["model_ru_maxrss"] = model_loaded_ru_maxrss
-                dic_results[dataset_name]["model_trained_ru_maxrss"] = model_trained_ru_maxrss
-                dic_results[dataset_name]["Highest_Train"] = Highest_Train.item()
-                dic_results[dataset_name]["Highest_Valid"] = Highest_Valid.item()
-                dic_results[dataset_name]["Final_Train"] = Final_Train.item()
-                gsaint_Final_Test= Final_Test.item()
-                dic_results[dataset_name]["Final_Test"] = Final_Test.item()
-                dic_results[dataset_name]["runs_count"] = args.runs
-                dic_results[dataset_name]["avg_train_time"] = total_run_t
-                dic_results[dataset_name]["rgcn_total_time"] = (gsaint_end_t - gsaint_start_t).total_seconds()
-                dic_results[dataset_name]["model_parameters_count"]= sum(p.numel() for p in model.parameters())
-                dic_results[dataset_name]["model_trainable_paramters_count"]=sum(p.numel() for p in model.parameters() if p.requires_grad)
+                    print("model init time CPU=", end_t - start_t, " sec.")
+                    dic_results[dataset_name]["model init Time"] = (end_t - start_t).total_seconds()
+                    device = f'cuda:{args.device}' if torch.cuda.is_available() else 'cpu'
+                    model = RGCN(128, args.hidden_channels, dataset.num_classes, args.num_layers,
+                                 args.dropout, num_nodes_dict, list(x_dict.keys()),
+                                 len(edge_index_dict.keys())).to(device)
 
-                pd.DataFrame(dic_results).transpose().to_csv(output_path+"GSAINT_" + GA_dataset_name + "_Times.csv", index=False)
-                # shutil.rmtree("/shared_mnt/DBLP/" + dataset_name)
-                torch.save(model.state_dict(), output_path +model_name )
+                    x_dict = {k: v.to(device) for k, v in x_dict.items()}
+                    print("x_dict=", x_dict.keys())
+                    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+                    model_loaded_ru_maxrss = getrusage(RUSAGE_SELF).ru_maxrss
+                    output_path = "/shared_mnt/KGTOSA_MAG/"
+                    model_name = dataset_name + "_DBLP_conf_GSAINT_QM.model"
+                    if args.loadTrainedModel == 1:
+                        with torch.no_grad():
+                            start_t = datetime.datetime.now()
+                            model.load_state_dict(torch.load(output_path +model_name))
+                            model.eval()
+                            out = model.inference(x_dict, edge_index_dict, key2int)
+                            out = out[key2int[subject_node]]
+                            y_pred = out.argmax(dim=-1, keepdim=True).cpu()
+                            end_t = datetime.datetime.now()
+                            print(dataset_name, "Infernce Time=", (end_t - start_t).total_seconds())
+                            dic_results[dataset_name]["InfernceTime="] = (end_t - start_t).total_seconds()
+                    else:
+                        print("start test")
+                        test()  # Test if inference on GPU succeeds.
+                        total_run_t = 0
+                        for run in range(args.runs):
+                            start_t = datetime.datetime.now()
+                            model.reset_parameters()
+                            for epoch in range(1, 1 + args.epochs):
+                                loss = train(epoch)
+                                ##############
+                                if loss==-1:
+                                    return 0.001
+                               ##############
+
+                                torch.cuda.empty_cache()
+                                result = test()
+                                logger.add_result(run, result)
+                                train_acc, valid_acc, test_acc = result
+                                print(f'Run: {run + 1:02d}, '
+                                      f'Epoch: {epoch:02d}, '
+                                      f'Loss: {loss:.4f}, '
+                                      f'Train: {100 * train_acc:.2f}%, '
+                                      f'Valid: {100 * valid_acc:.2f}%, '
+                                      f'Test: {100 * test_acc:.2f}%')
+                                print("model # Total  parameters ", sum(p.numel() for p in model.parameters()))
+                                print("model # trainable paramters ", sum(p.numel() for p in model.parameters() if p.requires_grad))
+                            logger.print_statistics(run)
+                            end_t = datetime.datetime.now()
+                            total_run_t = total_run_t + (end_t - start_t).total_seconds()
+                            print("model run ", run, " train time CPU=", end_t - start_t, " sec.")
+                            print(getrusage(RUSAGE_SELF))
+                        total_run_t = (total_run_t + 0.00001) / args.runs
+                        gsaint_end_t = datetime.datetime.now()
+                        Highest_Train, Highest_Valid, Final_Train, Final_Test = logger.print_statistics()
+                        model_trained_ru_maxrss = getrusage(RUSAGE_SELF).ru_maxrss
+                        dic_results[dataset_name]["init_ru_maxrss"] = init_ru_maxrss
+                        dic_results[dataset_name]["model_ru_maxrss"] = model_loaded_ru_maxrss
+                        dic_results[dataset_name]["model_trained_ru_maxrss"] = model_trained_ru_maxrss
+                        dic_results[dataset_name]["Highest_Train"] = Highest_Train.item()
+                        dic_results[dataset_name]["Highest_Valid"] = Highest_Valid.item()
+                        dic_results[dataset_name]["Final_Train"] = Final_Train.item()
+                        gsaint_Final_Test= Final_Test.item()
+                        dic_results[dataset_name]["Final_Test"] = Final_Test.item()
+                        dic_results[dataset_name]["runs_count"] = args.runs
+                        dic_results[dataset_name]["avg_train_time"] = total_run_t
+                        dic_results[dataset_name]["rgcn_total_time"] = (gsaint_end_t - gsaint_start_t).total_seconds()
+                        dic_results[dataset_name]["model_parameters_count"]= sum(p.numel() for p in model.parameters())
+                        dic_results[dataset_name]["model_trainable_paramters_count"]=sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+                        # pd.DataFrame(dic_results).transpose().to_csv(output_path+"GSAINT_" + GA_dataset_name + "_Times.csv", index=False)
+                        # shutil.rmtree("/shared_mnt/DBLP/" + dataset_name)
+                        #torch.save(model.state_dict(), output_path +model_name )
         except Exception as e:
             print(e)
             print(traceback.format_exc())
