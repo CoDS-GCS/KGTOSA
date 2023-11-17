@@ -3,6 +3,7 @@ import gzip
 import datetime
 import os
 import shutil
+import copy
 from sklearn.metrics import precision_recall_fscore_support as score
 
 
@@ -391,23 +392,24 @@ if __name__ == '__main__':
                 # print( list(entites_dic.keys()))
                 for rel in relations_dic:
                     for rel_list in relations_entites_map[rel]:
-                        e1, rel, e2 = rel_list
-                        ############
-                        relations_dic[rel]["s_idx"] = relations_dic[rel]["s"].apply(
+                        temp_relations_dic = copy.deepcopy(relations_dic[rel])
+                        temp_relations_dic["s_idx"] = temp_relations_dic["s"].apply(
                             lambda x: str(x).split("/" + e1 + "/")[-1])
-                        relations_dic[rel]["s_idx"] = relations_dic[rel]["s_idx"].apply(
-                            lambda x: entites_dic[e1 + "_dic"][x] if x in entites_dic[e1 + "_dic"].keys() else -1)
-                        relations_dic[rel] = relations_dic[rel][relations_dic[rel]["s_idx"] != -1]
+                        temp_relations_dic["s_idx"] = temp_relations_dic["s_idx"].apply(
+                            lambda x: entites_dic[e1 + "_dic"][x] if x in entites_dic[
+                                e1 + "_dic"].keys() else -1)
+                        temp_relations_dic = temp_relations_dic[temp_relations_dic["s_idx"] != -1]
                         ################
                         # relations_dic[rel]["o_keys"]=relations_dic[rel]["o"].apply(lambda x:x.split("/")[3] if x.startswith("http") and len(x.split("/")) > 3 else x)
-                        relations_dic[rel]["o_idx"] = relations_dic[rel]["o"].apply(
+                        temp_relations_dic["o_idx"] = temp_relations_dic["o"].apply(
                             lambda x: str(x).split("/" + e2 + "/")[-1])
-                        relations_dic[rel]["o_idx"] = relations_dic[rel]["o_idx"].apply(
-                            lambda x: entites_dic[e2 + "_dic"][x] if x in entites_dic[e2 + "_dic"].keys() else -1)
-                        relations_dic[rel] = relations_dic[rel][relations_dic[rel]["o_idx"] != -1]
+                        temp_relations_dic["o_idx"] = temp_relations_dic["o_idx"].apply(
+                            lambda x: entites_dic[e2 + "_dic"][x] if x in entites_dic[
+                                e2 + "_dic"].keys() else -1)
+                        temp_relations_dic = temp_relations_dic[temp_relations_dic["o_idx"] != -1]
 
-                        relations_dic[rel] = relations_dic[rel].sort_values(by="s_idx").reset_index(drop=True)
-                        rel_out = relations_dic[rel][["s_idx", "o_idx"]]
+                        temp_relations_dic = temp_relations_dic.sort_values(by="s_idx").reset_index(drop=True)
+                        rel_out = temp_relations_dic[["s_idx", "o_idx"]]
                         if len(rel_out) > 0:
                             map_folder = "/shared_mnt/DBLP/Sparql_Sampling_conf/" + dataset_name + "/raw/relations/" + e1 + "___" + \
                                          rel.split("/")[-1] + "___" + e2
