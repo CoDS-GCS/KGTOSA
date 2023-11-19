@@ -84,3 +84,37 @@ python Morse/main.py --dataset <DatasetName> --TargetRel <target_rel
 python LHGNN/main.py --dataset <DatasetName> --TargetRel <target_rel
 ```
 
+## Citing Our Work
+If you find our work useful, please cite it in your research:
+<br>
+```html
+@INPROCEEDINGS{10184515,
+  author={Abdallah, Hussein and Mansour, Essam},
+  booktitle={2023 IEEE 39th International Conference on Data Engineering (ICDE)}, 
+  title={Towards a GML-Enabled Knowledge Graph Platform}, 
+  year={2023},
+  volume={},
+  number={},
+  pages={2946-2954},
+  doi={10.1109/ICDE55515.2023.00225}
+}
+
+
+@article{abdallah2023demonstration,
+  title={Demonstration of SPARQL ML: An Interfacing Language for Supporting Graph Machine Learning for RDF Graphs},
+  author={Abdallah, Hussein and Afandi, Waleed and Mansour, Essam},
+  journal={Proceedings of the VLDB Endowment},
+  volume={16},
+  number={12},
+  pages={3974--3977},
+  year={2023},
+  publisher={VLDB Endowment}
+}
+
+@article{KGTOSA,
+  title={Task-Oriented GNNs Training on Large Knowledge Graphs for Accurate and Efficient Modeling},
+  author={Abdallah, Hussein and Afandi, Waleed and Kalnis, Panos and Mansour, Essam},
+  journal={Proceedings of the VLDB Endowment},
+  publisher={CORR}
+}
+```
