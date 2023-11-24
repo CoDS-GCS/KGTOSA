@@ -5,6 +5,7 @@
 </figure>
 
 <p><h3>KG-TOSA is the main sampling techniques utilized by <a href="https://github.com/CoDS-GCS/KGNET">KGNet</a> system.</h3></h3></p>
+
 ## Installation
 * Clone the `KGTOSA` repo 
 * Create `KGTOSA` Conda environment (Python 3.8) and install pip requirements.
