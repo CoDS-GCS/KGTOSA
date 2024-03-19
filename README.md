@@ -4,7 +4,7 @@
   <figcaption>Fig.1: The TOSG’s generic graph pattern is based on two parameters: (i) the direction (outgoing and incoming) predicates, and (i) the number of hops.</figcaption>
 </figure>
 
-<p><h3>KG-TOSA is the main sampling techniques utilized by <a href="https://github.com/CoDS-GCS/KGNET">KGNet</a> system.</h3></h3></p>
+<p><h3>KG-TOSA is the main sampling techniques utilized by <a href="https://github.com/CoDS-GCS/KGNET">KGNet</a> system. <span style="color:blue">Accepted at ICDE-2024.</span></h3> </h3></p>
 
 ## Installation
 * Clone the `KGTOSA` repo 
@@ -13,22 +13,8 @@
 ```commandline
 conda activate KGTOSA
 ```
-
-
-
-<b>Extract TOSG triples:</b>
-1. Node Classification
-```python
-python -u TOSG_Extraction/TOSG_Extraction_NC.py --sparql_endpoint http://206.12.98.118:8890/sparql --graph_uri http://dblp.org --target_rel_uri https://dblp.org/rdf/schema#publishedIn --TOSG d1h1 --batch_size 1000000 --out_file DBLP-15M_PV --threads_count 32  
-```
-2. Link Prediction
-```python
-python -u TOSG_Extraction/TOSG_Extraction_LP.py --target_rel_uri=isConnectedTo --data_path=<path> --dataset=YAGO3-10 --TOSG=d1h1 --file_sep=tab
-```
-<b>Transform NC TOSG dataset into PYG dataset</b>
-```python
-python -u DatasetTransformer/TSV_TO_PYG_dataset.py --traget_node_type=Paper --target_rel=publishedIn --csv_path=<path> --dataset_name=DBLP-15M_PV_d1h1 --file_sep=tab --split_rel=publish_year 
-```
+##Datasets
+### Download the ready datasets below
 <b>Download KGTOSA NC datasets</b>
 <li>
 <a href="http://206.12.102.56/CodsData/KGNET/KGBen/MAG/MAG42M_PV_FG.zip">MAG_42M_PV_FG</a>
@@ -56,11 +42,27 @@ python -u DatasetTransformer/TSV_TO_PYG_dataset.py --traget_node_type=Paper --ta
 <li>
 <a href="http://206.12.102.56/CodsData/KGNET/KGBen/DBLP/LP/DBLP2023-010305.zip">DBLP2023-010305_FG_d2h1</a>
 </li>
-</p>
+
+### OR
+
+<b>Extract and Transform the dataset triples:</b>
+1. Node Classification
+```python
+python -u TOSG_Extraction/TOSG_Extraction_NC.py --sparql_endpoint http://206.12.98.118:8890/sparql --graph_uri http://dblp.org --target_rel_uri https://dblp.org/rdf/schema#publishedIn --TOSG d1h1 --batch_size 1000000 --out_file DBLP-15M_PV --threads_count 32  
+```
+2. Link Prediction
+```python
+python -u TOSG_Extraction/TOSG_Extraction_LP.py --target_rel_uri=isConnectedTo --data_path=<path> --dataset=YAGO3-10 --TOSG=d1h1 --file_sep=tab
+```
+#### Transform NC TOSG dataset into PYG dataset
+```python
+python -u DatasetTransformer/TSV_TO_PYG_dataset.py --traget_node_type=Paper --target_rel=publishedIn --csv_path=<path> --dataset_name=DBLP-15M_PV_d1h1 --file_sep=tab --split_rel=publish_year 
+```
 
 
 
-<b>Reproduce KGTOSA Results:</b>
+
+##Train your Model:
 1. Node Classification
 ```python
 # run RGCN  
@@ -93,6 +95,7 @@ If you find our work useful, please cite it in your research:
 @article{KGTOSA,
   title={Task-Oriented GNNs Training on Large Knowledge Graphs for Accurate and Efficient Modeling},
   author={Abdallah, Hussein and Afandi, Waleed and Kalnis, Panos and Mansour, Essam},
-  publisher={CORR}
+  booktitle={2024 IEEE 40th International Conference on Data Engineering (ICDE)}, 
+  year={2024},
 }
 ```
