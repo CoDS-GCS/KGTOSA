@@ -1,10 +1,10 @@
-# KG-TOSA: A Task-Oriented graph SAmpler for GNN
+## <a href="https://arxiv.org/abs/2403.05752">KGTOSA</a>: Task-Oriented GNNs Training on Large Knowledge Graphs for Accurate and Efficient Modeling
 <figure>
   <img src="KGTOSA_BGP.png" width="400" />
   <figcaption>Fig.1: The TOSG’s generic graph pattern is based on two parameters: (i) the direction (outgoing and incoming) predicates, and (i) the number of hops.</figcaption>
 </figure>
 
-<p><h3>KG-TOSA is the main sampling techniques utilized by <a href="https://github.com/CoDS-GCS/KGNET">KGNet</a> system. <span style="color:blue">Accepted at ICDE-2024.</span></h3> </h3></p>
+<p><h3>KGTOSA is the HGNN sampling techniques utilized by <a href="https://github.com/CoDS-GCS/KGNET">KGNet</a> system. <span style="color:blue">Accepted at ICDE-2024.</span></h3> </h3></p>
 
 ## Installation
 * Clone the `KGTOSA` repo 
@@ -13,7 +13,9 @@
 ```commandline
 conda activate KGTOSA
 ```
-##Datasets
+## KGTOSA and Full-graph Datasets
+These datasets are extracted from the knoweldge graph using SPARQL Queries and transformed into PYG dataloader format.
+The d1h1 datasets are extrated using the KGTOSA Algo.3 (<a href="https://arxiv.org/abs/2403.05752">here</a>). 
 ### Download the ready datasets below
 <b>Download KGTOSA NC datasets</b>
 <li>
