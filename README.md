@@ -1,10 +1,18 @@
-## <a href="https://arxiv.org/abs/2403.05752">KGTOSA</a>: Task-Oriented GNNs Training on Large Knowledge Graphs for Accurate and Efficient Modeling
+## KGTOSA: Task-Oriented GNNs Training on Large Knowledge Graphs for Accurate and Efficient Modeling. 
+<p style="color:blue">Accepted ICDE-2024</p>
+<p>Hussein Abdallah, Walid Afandi, Panos Kalnis, and Essam Mansour
+<br>
+Contact: Hussein Abdallah (hussein.abdallah@mail.conocrdia.ca)
+</p>
+<a href="https://arxiv.org/abs/2403.05752">Latest version of the paper.</a>
+<p>Abstract: A Knowledge Graph (KG) is a heterogeneous graph encompassing a diverse range of node and edge types. Heterogeneous Graph Neural Networks (HGNNs) are popular for training machine learning tasks like node classification and link prediction on KGs. However, HGNN methods exhibit excessive complexity influenced by the KG’s size, density, and the number of node and edge types. AI practitioners handcraft a subgraph of a KG G relevant to a specific task. We refer to this subgraph as a task-oriented subgraph (TOSG), which contains a subset of taskrelated node and edge types in G. Training the task using TOSG instead of G alleviates the excessive computation required for a large KG. Crafting the TOSG demands a deep understanding of the KG’s structure and the task’s objectives. Hence, it is challenging and time-consuming. This paper proposes KG-TOSA, an approach to automate the TOSG extraction for task-oriented HGNN training on a large KG. In KG-TOSA, we define a generic graph pattern that captures the KG’s local and global structure relevant to a specific task. We explore different techniques to extract subgraphs matching our graph pattern: namely (i) two techniques sampling around targeted nodes using biased random walk or influence scores, and (ii) a SPARQL-based extraction method leveraging RDF engines’ built-in indices. Hence, it achieves negligible preprocessing overhead compared to the sampling techniques. We develop a benchmark of real KGs of large sizes and various tasks for node classification and link prediction. Our experiments show that KG-TOSA helps state-of-the-art HGNN methods reduce training time and memory usage by up to 70% while improving the model performance, e.g., accuracy and inference time.</p>
+<center>
 <figure>
   <img src="KGTOSA_BGP.png" width="400" />
   <figcaption>Fig.1: The TOSG’s generic graph pattern is based on two parameters: (i) the direction (outgoing and incoming) predicates, and (i) the number of hops.</figcaption>
 </figure>
-
-<p><h3>KGTOSA is the HGNN sampling techniques utilized by <a href="https://github.com/CoDS-GCS/KGNET">KGNet</a> system. <span style="color:blue">Accepted at ICDE-2024.</span></h3> </h3></p>
+</center>
+<p><h3>KGTOSA is the HGNN sampler utilized by KGNet system (<a href="https://github.com/CoDS-GCS/KGNET">Published at ICDE2023</a>).</h3> </h3></p>
 
 ## Installation
 * Clone the `KGTOSA` repo 
@@ -64,7 +72,7 @@ python -u DatasetTransformer/TSV_TO_PYG_dataset.py --traget_node_type=Paper --ta
 
 
 
-##Train your Model:
+## Train your Model:
 1. Node Classification
 ```python
 # run RGCN  
